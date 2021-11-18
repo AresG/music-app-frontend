@@ -4,17 +4,17 @@ import {getMusicLyric} from '@/api/musicList.api.js'
 export default createStore({
   state: {
     tracks: [{
-      id: 35847388,
-      name:'Hello',
+      id: 1456890009,
+      name:'Follow',
       al: {
         id: 3377030,
-        name: "Hello",
-        pic: 1407374890649284,
-        picUrl: "http://p3.music.126.net/PrO7oPvnjvH4xdujdGbf2w==/1407374890649284.jpg",
+        name: "Follow",
+        pic: 109951165076380460,
+        picUrl: "http://p3.music.126.net/yN1ke1xYMJ718FiHaDWtYQ==/109951165076380471.jpg",
       },
       ar: [{
-        id: 46487,
-        name: "Adele"
+        id: 33259235,
+        name: "梨冻紧"
       }]
     }],
     nextTracks: [{
