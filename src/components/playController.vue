@@ -1,6 +1,6 @@
 <template>
   <div class="playController">
-    <div class="left">
+    <div class="left" @click="isShow=!isShow">
       <img :src="tracks[playCurIndex].al.picUrl" alt="">
       <div class="content">
         <div class="title">
@@ -24,18 +24,25 @@
       </svg>
     </div>
 
+
     <audio ref="audio" :src="`https://music.163.com/song/media/outer/url?id=${tracks[playCurIndex].id}.mp3`"></audio>
+    <PlayMusicDetail v-show="isShow" :playDetail="tracks[playCurIndex]" :isPlay="isPlay" :onPlayMusic="playMusic"></PlayMusicDetail>
+
   </div>
 
 </template>
 
 <script>
-import {ref, onMounted, onUpdated, reactive, onBeforeUpdate, nextTick} from 'vue'
-import {useStore, mapState, mapMutations} from 'vuex'
+import {ref, onMounted, onUpdated, reactive, onBeforeUpdate, nextTick, computed, watch} from 'vue'
+import {useStore, mapState, mapActions} from 'vuex'
 
+import PlayMusicDetail from '@/components/PlayMusicDetail.vue'
 import mybus from '@/plugins/mybus.js'
 
 export default {
+  components:{
+    PlayMusicDetail
+  },
   computed:{
     ...mapState(['tracks', 'playCurIndex'])
   },
@@ -43,41 +50,83 @@ export default {
     const store = useStore();
     let audio = ref(null)
     let isPlay = ref(false);
+    let isShow = ref(false);
+
+    // 加载和更新时都要更新歌词
+    onMounted(async() => {
+      store.commit('setPlayCurIndex', store.state.playCurIndex);
+      await store.dispatch('reqLyric', {id:store.state.tracks[store.state.playCurIndex].id})
+      store.commit('setPlayTotalTime', parseInt(audio.value.duration)*1000);
+    })
+    onUpdated(() => {
+      store.dispatch('reqLyric', {id:store.state.tracks[store.state.playCurIndex].id});
+      // 不知道这里为什么用nextTick无效,commit过去的时间为NaN
+      // nextTick(() => {
+      //   console.log(audio);
+      //   store.commit('setPlayTotalTime', parseInt(audio.value.duration)*1000);
+      // })
+    })
+
+    // 用watch来监听vuex里歌词的变化，来传递audio的时间给vuex
+    watch(() => store.state.musicLyric, (newVal, oldVal) => {
+      store.commit('setPlayTotalTime', parseInt(audio.value.duration)*1000);
+    })
 
     // 控制audio播放暂停
     function playMusic() {
       if(audio.value.paused){
         audio.value.play()
         isPlay.value = true;
+        mybus.emit('updateTime');
       }else{
         audio.value.pause()
         isPlay.value = false;
+        clearInterval(store.state.intervalId)
       }
       // console.log(audio);
     }
 
-    onUpdated(() => {
-      mybus.on('playNthMusic', (idx) => {
-        store.commit('setPlayCurIndex', idx);
-        isPlay.value=true;
-        nextTick(() => {
-          audio.value.play()
-        })
-      })
+    //更新播放时间
+    mybus.on('updateTime', () => {
+      // 清除上一次的定时器
+      clearInterval(store.state.intervalId)
+      store.state.intervalId = setInterval(() => {
+        // 超出时间则停止播放
+        if(audio.value.currentTime * 1000 >= store.state.playTotalTime){
+          audio.value.pause()
+          isPlay.value = false;
+          clearInterval(store.state.intervalId)
+        }
+        store.commit('setPlayCurTime',audio.value.currentTime * 1000)
+      }, 1000)
     })
-      
+
+    // 歌曲列表点击某首歌曲时控制playcontroll播放
+    mybus.on('playNthMusic', (musicObj) => {
+      store.commit('setPlayCurIndex', musicObj['curIdx']);
+      // 第一次挂载时不播放音乐
+      if(!musicObj['isFirst']){
+        // 只有audio全部更新加载完了才能播放
+        nextTick(() => {
+          playMusic();
+        })
+      }
+    })
+
+    // 歌曲详情页点击返回时触发的事件
+    mybus.on('backToMusicList', () => {
+      isShow.value = false;
+    })   
 
     
     return{
       store,
       audio,
       playMusic,
-      isPlay
+      isPlay,
+      isShow
     }
-  },
-  updated() {
-    console.log(this.tracks)
-  },
+  }
 }
 </script>
 

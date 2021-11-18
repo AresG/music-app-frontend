@@ -32,11 +32,11 @@ export default {
       
     });
     onMounted(async () => {
+      // 获取当前歌单列表，并添加到下个歌单准备播放
       let id = route.query.id
       let res = await getMusicList(id);
       state.playlist = res.data.playlist; 
-      store.commit('setTracks', state.playlist.tracks)
-      console.log(res);
+      store.commit('setNextTracks', state.playlist.tracks);
     })
 
     return {
@@ -47,5 +47,8 @@ export default {
 </script>
 
 <style>
+.musiclist::-webkit-scrollbar{
+  display: none;
+}
 
 </style>

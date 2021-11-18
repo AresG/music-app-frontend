@@ -36,7 +36,8 @@
 </template>
 
 <script>
-import {mapMutations} from 'vuex'
+import {onMounted} from 'vue'
+import {mapMutations, useStore} from 'vuex'
 
 import {changeUnit} from '@/utils/changeUnit.js'
 import mybus from '@/plugins/mybus.js'
@@ -48,8 +49,14 @@ export default {
   },
   setup(props) {
 
+    const store = useStore();
+
     function playMusic(idx){
-      mybus.emit('playNthMusic', idx);
+      store.commit('setTracks', store.state.nextTracks);
+      store.commit('setNextTracks', store.state.nextTracks)
+      // 播放音乐并更新时间
+      mybus.emit('playNthMusic', {'curIdx':idx, 'isFirst':false});
+      mybus.emit('updateTime');
     }
 
     return{

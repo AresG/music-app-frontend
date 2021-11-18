@@ -1,13 +1,13 @@
 <template>
   <router-view/>
-  <playController></playController>
+  <PlayController></PlayController>
 </template>
 
 <script>
-import playController from '@/components/playController.vue'
+import PlayController from '@/components/PlayController.vue'
 export default {
   components:{
-    playController
+    PlayController
   },
   setup(props) {
     

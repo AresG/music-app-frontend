@@ -107,7 +107,7 @@ export default {
         padding: 0.02rem 0.08rem;
         border-radius: 0.1rem;
         color: rgba(255, 255, 255, 0.5);
-        font-size: 0.1rem;
+        font-size: 0.25rem;
         .icon{
           width: 0.3rem;
           height: 0.3rem;
@@ -118,7 +118,7 @@ export default {
         width: 2rem;
         height: 0.6rem;
         line-height: 0.3rem;
-        font-size: 0.1rem;
+        font-size: 0.25rem;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;

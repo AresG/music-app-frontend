@@ -11,7 +11,7 @@
             <span class="navBtn">云村</span>
             <span class="navBtn">视频</span>
         </div>
-        <div class="topRight">
+        <div class="topRight" @click="router.push('/search')">
             <svg class="icon" aria-hidden="true">
                 <use xlink:href="#icon-sousuo"></use>
             </svg>
@@ -20,8 +20,21 @@
 </template>
 
 <script>
-export default {
+import {onMounted} from 'vue'
+import {useRouter} from 'vue-router'
 
+export default {
+    setup(props) {
+        const router = useRouter();
+
+        onMounted(() => {
+            console.log(router);
+        })
+
+        return {
+            router
+        }
+    }
 }
 </script>
 
