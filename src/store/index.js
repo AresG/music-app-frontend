@@ -34,7 +34,8 @@ export default createStore({
     playCurTime: 0,
     playTotalTime:0,
     intervalId:0,
-    musicLyric:'',
+    musicLyric: '',
+    playNumLi:0,
   },
   mutations: {
     setNextTracks(state, value) {
@@ -54,6 +55,9 @@ export default createStore({
     },
     setMusicLyric(state, value) {
       state.musicLyric = value;
+    },
+    setPlayNumLi(state, value) {
+      state.setPlayNumLi = value;
     }
   },
   actions: {

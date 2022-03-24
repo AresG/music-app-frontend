@@ -31,15 +31,17 @@ export default {
   setup(props) {
     let timer = null;
     const musicList = reactive([]);
-    onMounted(() => {
-      timer = setInterval(async () => {
+    onMounted(async () => {
         let res = await getPersonalized(30);
-        musicList.length = 0;
         let list = res.data.result;
-        let rand = parseInt(Math.random()*27)
-        musicList.push(...list.slice(rand,rand+3));
-      }, 5000)
+        sessionStorage.setItem('musicList', JSON.stringify(list))
     })
+    timer = setInterval((params) => {
+      let list = JSON.parse(sessionStorage.getItem('musicList'))
+      let rand = parseInt(Math.random()*27)
+      musicList.length = 0;
+      musicList.push(...list.slice(rand,rand+3));
+    },5000)
     onBeforeUnmount(() => {
       clearInterval(timer);
     })

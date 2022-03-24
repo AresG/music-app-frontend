@@ -21,19 +21,25 @@
         </svg>
       </div>
     </div>
-    <!-- 中间歌词 -->
-    <div v-if="isLyric" class="midLyric" @click="isLyric = !isLyric" ref="lyricBox">
-        <p ref="p" v-for="(item, i) in lyricList" :key="i" :class="{active: playCurTime> item.totalTime && playCurTime < item.nextTotalTime }">
-        <!-- <p ref="p" v-for="(item, i) in lyricList" :key="i" :class="{active:setP(item)}"> -->
-          {{item.lyric}}
-        </p>
-    </div>
-    <!-- 中间图片 -->
-    <div v-else class="midImg" @click="isLyric = !isLyric">
-      <img class="needle" :class="{active:!isPlay}" src="@/assets/imgs/needle.png">
-      <img class="avatar" :src="playDetail.al.picUrl">
-      <img class="disc" src="@/assets/imgs/disc.png">
-    </div>
+      <!-- 中间歌词 -->
+      <div v-show="isLyric" class="midLyric" @click="isLyric = !isLyric" ref="lyricBox">
+        <div class="wrapper">
+          <div class="content">
+          <p v-for="(item, i) in lyricList" :key="i"
+           :class="{active: playCurTime> item.totalTime && playCurTime < item.nextTotalTime }"
+           :num="i">
+          <!-- <p ref="p" v-for="(item, i) in lyricList" :key="i" :class="{active:setP(item)}"> -->
+            {{item.lyric}}
+          </p>
+          </div>
+        </div>
+      </div>
+      <!-- 中间图片 -->
+      <div v-show="!isLyric" class="midImg" @click="isLyric = !isLyric">
+        <img class="needle" :class="{active:!isPlay}" src="@/assets/imgs/needle.png">
+        <img class="avatar" :src="playDetail.al.picUrl">
+        <img class="disc" src="@/assets/imgs/disc.png">
+      </div>
     <!-- 进度条 -->
     <div class="progress"></div>
     <!-- 底部控件 -->
@@ -69,10 +75,10 @@
 </template>
 
 <script>
-import {ref ,onMounted} from 'vue'
+import {ref ,onMounted, computed, onUpdated, watch, nextTick, reactive} from 'vue'
 import {mapState, useStore} from 'vuex'
 import mybus from '@/plugins/mybus.js'
-import store from '@/store'
+import BetterScroll from 'better-scroll'
 
 export default {
   props:["playDetail", "isPlay", "onPlayMusic"],
@@ -98,11 +104,6 @@ export default {
       return preArr.slice(0, preArr.length - 1);
     }
   },
-  watch:{
-    playCurTime:function (newVal) {  
-      // console.log(newVal);
-    }
-  },
   setup(props) {
 
     let store = useStore();
@@ -110,8 +111,11 @@ export default {
     let number = ref(0);
     // 是否显示歌词
     let isLyric = ref(false);
-    let p = ref(null);
     let lyricBox = ref(null);
+    // 播放到第几个p了
+    let numLi = 0;
+    let scroll = reactive({});
+
 
     function back() {  
       mybus.emit('backToMusicList')
@@ -128,30 +132,57 @@ export default {
       console.log(idx);
       mybus.emit('playNthMusic', {'curIdx':idx, 'isFirst':false});
     }
-
-    // function setP(item) {  
-    //   if(store.state.playCurTime> item.totalTime && store.state.playCurTime < item.nextTotalTime){
-    //     //
-    //     console.log(lyricBox,p);
-    //     lyricBox.scrollTop = p.offsetTop;
-    //     return true;
-    //   }else{
-    //     return false;
-    //   }
-    // }
     
+    let lyricList = computed(() => {
+      let preArr = store.state.musicLyric.split(/\n/igs).map((item) => {
+        let min = item.slice(1,3);
+        let sec = item.slice(4,6);
+        let mill = item.slice(7,item.indexOf(']'));
+        let lyric = item.slice(item.indexOf(']') + 1);
+        let totalTime = parseInt(mill) + parseInt(sec) * 1000 + parseInt(min) *60000;
+        return {min, sec, mill, lyric, totalTime}
+      })
+      // 设置本句歌词与下一句的时间区间, 最后一个数组时无效的
+      for(let i = 0; i < preArr.length - 1; i++){
+        if(i === preArr.length - 2){
+          preArr[i]['nextTotalTime'] = preArr[i]['totalTime'] + 1000;
+        }else{
+          preArr[i]['nextTotalTime'] = preArr[i+1]['totalTime'];
+        }
+      }
+      return preArr.slice(0, preArr.length - 1);
+    })
+
     onMounted(() => {
-      // console.log(audio);
+      
+    })
+
+    onUpdated(() => {
+      let wrapper = document.querySelector('.wrapper');
+      scroll = new BetterScroll(wrapper, {click:true});
+    })
+
+    watch(() => store.state.playCurTime, (newVal, oldVal) => {
+      lyricList.value.forEach( (item, idx) => {
+        if(store.state.playCurTime > item.totalTime && store.state.playCurTime < item.nextTotalTime){
+          numLi = idx;
+        }
+      })
+      let p = document.querySelectorAll('p');
+      nextTick(() => {
+        if(numLi > 2){
+          scroll.scrollToElement(p[numLi - 1])
+        }
+      })
     })
 
     return{
       number,
       isLyric,
-      p,
       lyricBox,
       back,
       changeNumber,
-      goPlay
+      goPlay,
     }
   }
 
@@ -209,56 +240,63 @@ export default {
       }
     }
   }
-  .midLyric{
-    width: 7.5rem;
-    height: 70%;
-    padding: 0 0.375rem;
-    position: relative;
-    overflow: scroll;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.3rem;
-    text-align: center;
-    p{
-      margin-top: 0.5rem;
-    }
-    p.active{
-      color: white;
-      font-weight: 900;
-    }
-  }
-  .midImg{
-    width: 7.5rem;
-    height: 70%;
-    position: relative;
-    .needle{
-      width: 2rem;
-      height: auto;
-      position: absolute;
-      z-index: 999;
-      top: 0;
-      left: 50%;
-      margin-left: -0.5rem;
-      transform: rotate(0deg);
-      transform-origin: 0.3rem 0;
-      transition: all 1s;
-    }
-    .needle.active{
-      transform: rotate(-20deg);
-    }
-    .avatar{
-      width: 5rem;
-      position: absolute;
-      top: 2.3rem;
-      left: calc(50% - 2.5rem);
-      border-radius: 2.5rem;
-    }
-    .disc{
-      width: 5.6rem;
-      position: absolute;
-      top: 2rem;
-      left: calc(50% - 2.8rem);
+  
+.midLyric{
+  width: 7.5rem;
+  height: 70%;
+  padding: 1rem 0.375rem 0rem 0.375rem;
+  position: relative;
+  // overflow: scroll;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.3rem;
+  text-align: center;
+  .wrapper{
+    height: 100%;
+    overflow: hidden;
+    .content{
+      p{
+        margin-top: 0.5rem;
+      }
+      p.active{
+        color: white;
+        font-weight: 900;
+      }
     }
   }
+}
+.midImg{
+  width: 7.5rem;
+  height: 70%;
+  position: relative;
+  .needle{
+    width: 2rem;
+    height: auto;
+    position: absolute;
+    z-index: 999;
+    top: 0;
+    left: 50%;
+    margin-left: -0.5rem;
+    transform: rotate(0deg);
+    transform-origin: 0.3rem 0;
+    transition: all 1s;
+  }
+  .needle.active{
+    transform: rotate(-20deg);
+  }
+  .avatar{
+    width: 5rem;
+    position: absolute;
+    top: 2.3rem;
+    left: calc(50% - 2.5rem);
+    border-radius: 2.5rem;
+  }
+  .disc{
+    width: 5.6rem;
+    position: absolute;
+    top: 2rem;
+    left: calc(50% - 2.8rem);
+  }
+}
   .bottom{
     width: 7.5rem;
     height: 2rem;
