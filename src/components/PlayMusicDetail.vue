@@ -25,7 +25,7 @@
       <div v-show="isLyric" class="midLyric" @click="isLyric = !isLyric" ref="lyricBox">
         <div class="wrapper">
           <div class="content">
-          <p v-for="(item, i) in lyricList" :key="i"
+          <p class="pLi" v-for="(item, i) in lyricList" :key="i"
            :class="{active: playCurTime> item.totalTime && playCurTime < item.nextTotalTime }"
            :num="i">
           <!-- <p ref="p" v-for="(item, i) in lyricList" :key="i" :class="{active:setP(item)}"> -->
@@ -168,10 +168,11 @@ export default {
           numLi = idx;
         }
       })
-      let p = document.querySelectorAll('p');
+      let p = document.querySelectorAll('.pLi');
       nextTick(() => {
-        if(numLi > 2){
-          scroll.scrollToElement(p[numLi - 1])
+        console.log(numLi);
+        if(numLi > 4){
+          scroll.scrollToElement(p[numLi - 3], newVal - oldVal)
         }
       })
     })
